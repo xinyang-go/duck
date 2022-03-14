@@ -3,40 +3,42 @@
 
 // 定义Circle类型
 struct Circle {
-    void print() {
-        std::cout << "Circle::print()" << std::endl;
+    void print() const {
+        std::cout << "Circle[" << x << "]::print()" << std::endl;
     }
-    void draw() {
-        std::cout << "Circle::draw()" << std::endl;
+    void draw() const {
+        std::cout << "Circle[" << x << "]::draw()" << std::endl;
     }
+
+    int x;
 };
 
 // 定义Rectangle类型
 struct Rectangle {
     void print() {
-        std::cout << "Rectangle::print()" << std::endl;
+        std::cout << "Rectangle[" << x << "]::print()" << std::endl;
     }
     void draw() {
-        std::cout << "Rectangle::draw()" << std::endl;
+        std::cout << "Rectangle[" << x << "]::draw()" << std::endl;
     }
+
+    int x;
 };
 
 // 定义Print的interface
-struct Print : public interface<void(), [](auto &&obj) { obj.print(); }> {
-    // 函数别名，使得可以使用duck.print()进行调用
-    // 否则需要使用duck.invoke<Print>()进行调用
-    const interface::invoke_t &print = interface::invoke;
-};
+using Print = interface<void(), [](auto &&obj) { obj.print(); }>;
 
 // 定义Draw的interface
-struct Draw : public interface<void(), [](auto &&obj) { obj.draw(); }> {
-    // 函数别名，使得可以使用duck.draw()进行调用
-    // 否则需要使用duck.invoke<Draw>()进行调用
-    const interface::invoke_t &draw = interface::invoke;
-};
+using Draw = interface<void(), [](auto &&obj) { obj.draw(); }>;
 
 // 定义duck类型
-using ShapeDuck = duck<Print, Draw>;
+struct ShapeDuck : public duck<Print, Draw> {
+    using duck::duck;
+
+    // 手动起函数别名
+    void print() { return duck::invoke<Print>(); }
+    void draw() { return duck::invoke<Draw>(); }
+};
 
 // 使用duck类型
 void print_and_draw(ShapeDuck shape) {
@@ -49,10 +51,20 @@ void print_and_draw(ShapeDuck shape) {
 }
 
 int main() {
-    Circle a;
-    Rectangle b;
+    const Circle a{123};
+    Rectangle b{321};
     print_and_draw(a);
     print_and_draw(b);
+
+    ShapeDuck shape;
+
+    shape = a;
+    shape.draw();
+    shape.print();
+
+    shape = b;
+    shape.draw();
+    shape.print();
 
     return 0;
 }

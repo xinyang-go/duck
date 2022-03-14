@@ -55,12 +55,14 @@ void draw_shape(ShapeDuck shape) {
 
 ```cpp
 // 定义一个interface，类似virtual function
-struct Draw : public interface<void(), [](auto &&obj) { obj.draw(); }> {
-    // 定义别名
-    const interface::invoke_t &draw = interface::invoke;
+using Draw = interface<void(), [](auto &&obj) { obj.draw(); }>;
+
+// 定义duck类型
+struct ShapeDuck : public duck<Print, Draw> {
+    using duck::duck;
+    // 手动起函数别名
+    void draw() { return duck::invoke<Draw>(); }
 };
-// 定义一个duck type，由若干个interface构成
-using ShapeDuck = duck<Draw>;
 
 void draw_shape(ShapeDuck shape) {
     shape.draw();
@@ -73,18 +75,23 @@ void draw_shape(ShapeDuck shape) {
 
 * duck不需要虚函数与继承，便于用于第三方库。如std::array和std::vector都有operator[]，但本身并不存在虚函数和继承关系。
 * duck使得虚表和对象数据分离，不会影响到对象数据的二进制分布。
-* duck采用std::function实现，效率相对虚函数略低，同时“虚表”为动态生成，也需要消耗一定时间。
-* duck内部直接保存整个“虚表”，而非“虚表”指针，故duck对象的拷贝效率略低。
+* ~~duck采用std::function实现，效率相对虚函数略低。~~ 已优化，目前O2编译下调用效率与虚函数相当。
+* duck“虚表”为动态生成，需要消耗一定时间。
 
 ---
 
-原理简介：使用std::function擦除类型信息，形成“虚表”。“虚表”在构造duck对象时动态创建。
+原理简介：使用 ``intptr_t``保存对象指针，以擦除类型信息。“虚表”为一个函数指针，在构造duck对象时动态创建。整个duck内部有N+1个指针数据，其中N为interface的个数。
 
-注意：duck内部是对实际对象的**引用**，务必保证**实际对象的生命周期大于duck**。
+注意：
+
+* duck内部是对实际对象的**引用**，务必保证**实际对象的生命周期大于duck**。
+* 如果在duck初始化前调用invoke会导致程序崩溃。
+* 需要C++20支持。
 
 ---
 
 TODO
 
-* [ ] 优化调用效率和拷贝效率。
+* [X] 优化调用效率。
 * [ ] 完善concept和static_assert，优化编译报错信息。
+* [ ] 提供统一的静态多态和动态多态接口。

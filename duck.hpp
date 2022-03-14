@@ -1,7 +1,8 @@
 #ifndef _DUCK_HPP_
 #define _DUCK_HPP_
 
-#include <functional>
+#include <cstdint>
+#include <utility>
 
 template<typename F, auto func>
 class interface {};
@@ -9,38 +10,58 @@ class interface {};
 template<typename R, typename ...Args, auto func>
 class interface<R(Args...), func> {
 public:
-    template<typename T>
-    interface(T &&obj) : invoke(warp(std::forward<T>(obj))) {}
+    template<typename T, std::enable_if_t<!std::is_same_v<interface, std::decay_t<T>>, bool> = true>
+    interface(T &&obj) {
+        invoke = dispatch<std::remove_reference_t<T>>;
+    }
 
-    template<typename T>
+    interface(const interface& other) = default;
+
+    interface() = default;
+
+    template<typename T, std::enable_if_t<!std::is_same_v<interface, std::decay_t<T>>, bool> = true>
     interface &operator=(T &&obj) {
-        invoke = warp(std::forward<T>(obj));
+        invoke = dispatch<std::remove_reference_t<T>>;
         return *this;
     }
 
-protected:
-    using invoke_t = std::function<R(Args...)>;
+    interface &operator=(const interface&) = default;
 
-    invoke_t invoke;
+protected:
+    using invoker_t = R(*)(intptr_t, Args...);
+    invoker_t invoke = nullptr;
 
 private:
     template<typename T>
-    static auto warp(T &&obj) {
-        return [&](Args &&...args) {
-            return func(std::forward<T>(obj), std::forward<Args>(args)...);
-        };
+    static R dispatch(intptr_t p_obj, Args ...args) {
+        return func(*reinterpret_cast<T*>(p_obj), std::forward<Args>(args)...);
     }
 };
 
 template<typename ...Is>
-struct duck : public Is... {
-    template<typename T>
-    duck(T &&obj) : Is(std::forward<T>(obj)) ... {}
+class duck : public Is... {
+public:
+    template<typename T, std::enable_if_t<!std::is_same_v<duck, std::decay_t<T>>, bool> = true>
+    duck(T &&obj) : Is(std::forward<T>(obj)) ..., p_obj(reinterpret_cast<uintptr_t>(&obj)) {}
+
+    duck(const duck& other) = default;
+
+    duck() = default;
 
     template<typename I, typename ...Args>
-    auto invoke(Args &&...args) {
-        return I::invoke(std::forward<Args>(args)...);
+    auto invoke(Args &&...args) const {
+        return I::invoke(p_obj, std::forward<Args>(args)...);
     }
+
+    operator bool() { return p_obj != 0; }
+
+    bool empty() { return p_obj == 0; }
+
+    template<typename T>
+    T &cast() { return reinterpret_cast<T*>(p_obj); }
+
+private:
+    uintptr_t p_obj = 0;
 };
 
 #endif /* _DUCK_HPP_ */

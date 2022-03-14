@@ -7,3 +7,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 
 add_executable(example example.cpp)
+
+add_executable(benchmark benchmark.cpp)
+target_compile_options(benchmark PRIVATE -O2)
