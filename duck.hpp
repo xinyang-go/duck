@@ -28,12 +28,12 @@ public:
     interface &operator=(const interface&) = default;
 
 protected:
-    using invoker_t = R(*)(intptr_t, Args...);
+    using invoker_t = R(*)(uintptr_t, Args...);
     invoker_t invoke = nullptr;
 
 private:
     template<typename T>
-    static R dispatch(intptr_t p_obj, Args ...args) {
+    static R dispatch(uintptr_t p_obj, Args ...args) {
         return func(*reinterpret_cast<T*>(p_obj), std::forward<Args>(args)...);
     }
 };
