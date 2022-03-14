@@ -1,4 +1,4 @@
-# 40行代码实现C++非继承动态动态多态(duck type)
+# 40行代码实现C++非继承动态多态(duck type)
 
 What is duck type?
 
