@@ -26,10 +26,20 @@ struct Rectangle {
 };
 
 // 定义Print的interface
-using Print = interface<void(), [](auto &&obj) { obj.print(); }>;
+struct Print : public interface<Print, void()> {
+    using interface::interface;
+    // 使用模板成员函数指针指定某个成员函数
+    template<typename T>
+    static constexpr auto value = &T::print;
+};
 
 // 定义Draw的interface
-using Draw = interface<void(), [](auto &&obj) { obj.draw(); }>;
+struct Draw : public interface<Draw, void()> {
+    using interface::interface;
+    // 使用模板成员函数指针指定某个成员函数
+    template<typename T>
+    static constexpr auto value = &T::draw;
+};
 
 // 定义duck类型
 struct ShapeDuck : public duck<Print, Draw> {

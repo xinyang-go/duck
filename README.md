@@ -42,7 +42,12 @@ void draw_shape(Shape &shape) {
 
 ```cpp
 // 定义一个interface，类似virtual function
-using Draw = interface<void(), [](auto &&obj) { obj.draw(); }>
+struct Draw : public interface<Draw, void()> {
+    using interface::interface;
+    // 使用模板成员函数指针指定某个成员函数
+    template<typename T>
+    static constexpr auto value = &T::draw;
+};
 // 定义一个duck type，由若干个interface构成
 using ShapeDuck = duck<Draw>;
 
@@ -55,10 +60,14 @@ void draw_shape(ShapeDuck shape) {
 
 ```cpp
 // 定义一个interface，类似virtual function
-using Draw = interface<void(), [](auto &&obj) { obj.draw(); }>;
-
+struct Draw : public interface<Draw, void()> {
+    using interface::interface;
+    // 使用模板成员函数指针指定某个成员函数
+    template<typename T>
+    static constexpr auto value = &T::draw;
+};
 // 定义duck类型
-struct ShapeDuck : public duck<Print, Draw> {
+struct ShapeDuck : public duck<Draw> {
     using duck::duck;
     // 手动起函数别名
     void draw() { return duck::invoke<Draw>(); }

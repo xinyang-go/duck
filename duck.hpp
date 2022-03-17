@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <utility>
 
-template<typename F, auto func>
+template<typename, typename>
 class interface {};
 
-template<typename R, typename ...Args, auto func>
-class interface<R(Args...), func> {
+template<typename F, typename R, typename ...Args>
+class interface<F, R(Args...)> {
 public:
     template<typename T, std::enable_if_t<!std::is_same_v<interface, std::decay_t<T>>, bool> = true>
     interface(T &&obj) {
@@ -34,7 +34,8 @@ protected:
 private:
     template<typename T>
     static R dispatch(intptr_t p_obj, Args ...args) {
-        return func(*reinterpret_cast<T*>(p_obj), std::forward<Args>(args)...);
+        return (reinterpret_cast<T*>(p_obj)->*F::template value<T>)
+                    (std::forward<Args>(args)...);
     }
 };
 

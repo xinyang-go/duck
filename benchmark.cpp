@@ -1,14 +1,19 @@
-
 #include "duck.hpp"
 #include <iostream>
 #include <chrono>
 
+// 定义基类
 struct Compute {
     virtual int calc(int) = 0;
 };
 
 struct Plus final : public Compute {
+    // 重载虚函数
     virtual int calc(int x) override {
+        return value += x;
+    }
+    // 非虚函数(用于duck)
+    int calc_(int x) {
         return value += x;
     }
 
@@ -16,14 +21,26 @@ struct Plus final : public Compute {
 };
 
 struct Minus final : public Compute {
+    // 重载虚函数
     virtual int calc(int x) override {
+        return value -= x;
+    }
+    // 非虚函数(用于duck)
+    int calc_(int x) {
         return value -= x;
     }
 
     int value = 0;
 };
 
-struct Calc : public interface<int(int), [](auto &&obj, int x) { return obj.calc(x); }> {};
+// 定义calc_的interface
+struct Calc : public interface<Calc, int(int)> {
+    using interface::interface;
+    // 使用模板成员函数指针指定某个成员函数
+    template<typename T>
+    static constexpr auto value = &T::calc_;
+};
+// 定义duck类型
 using ComputeDuck = duck<Calc>;
 
 int duck_compute(ComputeDuck compute, int x) {
