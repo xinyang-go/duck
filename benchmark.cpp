@@ -1,5 +1,6 @@
 #include "duck.hpp"
 #include <iostream>
+#include <vector>
 #include <chrono>
 
 // 定义基类
@@ -43,42 +44,53 @@ struct Calc : public interface<Calc, int(int)> {
 // 定义duck类型
 using ComputeDuck = duck<Calc>;
 
-int duck_compute(ComputeDuck compute, int x) {
-    return compute.invoke<Calc>(x);
+__attribute_noinline__
+void invoke_by_duck(std::vector<ComputeDuck> vec) {
+    int sz = vec.size();
+    for(int i=0; i<sz; i++) {
+        vec[i].invoke<Calc>(i);
+    }
 }
 
-int virtual_compute(Compute &compute, int x) {
-    return compute.calc(x);
+__attribute_noinline__
+void invoke_by_virtual(std::vector<Compute*> vec) {
+    int sz = vec.size();
+    auto *data = vec.data();
+    for(int i=0; i<sz; i++) {
+        data[i]->calc(i);
+    }
 }
 
 void benchmark_duck(int n) {
     Plus plus;
     Minus minus;
-    auto t1 = std::chrono::steady_clock::now();
+    std::vector<ComputeDuck> vec(n);
     for(int i=0; i<n; i++) {
-        duck_compute(plus, i);
-        duck_compute(minus, i);
+        if(i%2 == 0) vec[i] = plus;
+        else vec[i] = minus;
     }
+    auto t1 = std::chrono::steady_clock::now();
+    invoke_by_duck(vec);
     auto t2 = std::chrono::steady_clock::now();
-    double ms = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count() / 1e3;
-    int result = plus.value - minus.value;
-    std::cout << "duck of n=" << n << ", timing=" << ms << "ms"
-            << ", result=" << result << std::endl;
+    std::cout << "duck n=" << n << ", timing="
+        << std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count() / 1e3
+        << "ms" << std::endl;
 }
 
 void benchmark_virtual(int n) {
     Plus plus;
     Minus minus;
-    auto t1 = std::chrono::steady_clock::now();
+    std::vector<Compute*> vec(n);
     for(int i=0; i<n; i++) {
-        virtual_compute(plus, i);
-        virtual_compute(minus, i);
+        if(i%2 == 0) vec[i] = &plus;
+        else vec[i] = &minus;
     }
+    auto t1 = std::chrono::steady_clock::now();
+    invoke_by_virtual(vec);
     auto t2 = std::chrono::steady_clock::now();
-    double ms = std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count() / 1e3;
-    int result = plus.value - minus.value;
-    std::cout << "virtual of n=" << n << ", timing=" << ms << "ms"
-              << ", result=" << result << std::endl;
+    std::cout << "virtual n=" << n << ", timing="
+        << std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count() / 1e3
+        << "ms" << std::endl;
 }
 
 int main() {

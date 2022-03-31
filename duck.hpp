@@ -11,21 +11,11 @@ template<typename F, typename R, typename ...Args>
 class interface<F, R(Args...)> {
 public:
     template<typename T, std::enable_if_t<!std::is_same_v<interface, std::decay_t<T>>, bool> = true>
-    interface(T &&obj) {
-        invoke = dispatch<std::remove_reference_t<T>>;
-    }
+    interface(T &&obj) : invoke(dispatch<std::remove_reference_t<T>>) {}
 
     interface(const interface& other) = default;
 
     interface() = default;
-
-    template<typename T, std::enable_if_t<!std::is_same_v<interface, std::decay_t<T>>, bool> = true>
-    interface &operator=(T &&obj) {
-        invoke = dispatch<std::remove_reference_t<T>>;
-        return *this;
-    }
-
-    interface &operator=(const interface&) = default;
 
 protected:
     using invoker_t = R(*)(uintptr_t, Args...);
@@ -34,8 +24,8 @@ protected:
 private:
     template<typename T>
     static R dispatch(uintptr_t p_obj, Args ...args) {
-        return (reinterpret_cast<T*>(p_obj)->*F::template value<T>)
-                    (std::forward<Args>(args)...);
+        auto p_func = F::template value<T>;
+        return (reinterpret_cast<T*>(p_obj)->*p_func)(std::forward<Args>(args)...);
     }
 };
 
@@ -57,9 +47,6 @@ public:
     operator bool() { return p_obj != 0; }
 
     bool empty() { return p_obj == 0; }
-
-    template<typename T>
-    T &cast() { return reinterpret_cast<T*>(p_obj); }
 
 private:
     uintptr_t p_obj = 0;
