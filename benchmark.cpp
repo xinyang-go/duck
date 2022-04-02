@@ -45,7 +45,7 @@ struct Calc : public interface<Calc, int(int)> {
 using ComputeDuck = duck<Calc>;
 
 __attribute_noinline__
-void invoke_by_duck(std::vector<ComputeDuck> vec) {
+void invoke_by_duck(const std::vector<ComputeDuck> &vec) {
     int sz = vec.size();
     for(int i=0; i<sz; i++) {
         vec[i].invoke<Calc>(i);
@@ -53,7 +53,7 @@ void invoke_by_duck(std::vector<ComputeDuck> vec) {
 }
 
 __attribute_noinline__
-void invoke_by_virtual(std::vector<Compute*> vec) {
+void invoke_by_virtual(const std::vector<Compute*> &vec) {
     int sz = vec.size();
     auto *data = vec.data();
     for(int i=0; i<sz; i++) {
