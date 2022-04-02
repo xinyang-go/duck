@@ -84,7 +84,7 @@ void draw_shape(ShapeDuck shape) {
 
 * duck不需要虚函数与继承，便于用于第三方库。如std::array和std::vector都有operator[]，但本身并不存在虚函数和继承关系。
 * duck使得虚表和对象数据分离，不会影响到对象数据的二进制分布。
-* ~~duck采用std::function实现，效率相对虚函数略低。~~ 已优化，目前O2编译下调用效率与虚函数仍有一定差距。
+* ~~duck采用std::function实现，效率相对虚函数略低。~~ 已优化，目前O2编译下调用效率与虚函数基本持平。
 * duck“虚表”为动态生成，需要消耗一定时间。
 
 ---
@@ -101,6 +101,6 @@ void draw_shape(ShapeDuck shape) {
 
 TODO
 
-* [ ] 优化调用效率。
+* [X] 优化调用效率。
 * [ ] 完善concept和static_assert，优化编译报错信息。
 * [ ] 提供统一的静态多态和动态多态接口。
